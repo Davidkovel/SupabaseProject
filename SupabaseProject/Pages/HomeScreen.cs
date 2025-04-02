@@ -1,46 +1,101 @@
 namespace SupabaseProject.Pages;
 
+using SupabaseProject.Data.Source.Remote.Service;
+
 public class HomeScreen
 {
-    public static void View(SupabaseService supabaseService)
+    public static async Task View(SupabaseService supabaseService)
     {
-        Console.Clear();
-        // var goods = supabaseService.GetGoodsListByUser();
-        // if (goods.Count == 0)
-        // {
-        //     Console.WriteLine("No goods found.");
-        // }
-        // else
-        // {
-        //     Console.WriteLine("Goods List:");
-        //     foreach (var good in goods)
-        //     {
-        //         Console.WriteLine(good.ToString());
-        //     }
-        // }
-
-        //Console.WriteLine($"Welcome {supabaseService.SupabaseUser?.Email ?? ""}!");
-        Console.WriteLine("1. View Profile");
-        Console.WriteLine("2. View Settings");
-        Console.WriteLine("3. Logout");
-        Console.Write("Select an option: ");
-
-        var option = Console.ReadLine();
-
-        switch (option)
+        var products = new Dictionary<string, double>
         {
-            case "1":
-                // Call method to view profile
-                break;
-            case "2":
-                // Call method to view settings
-                break;
-            case "3":
-                // Call method to logout
-                break;
-            default:
-                Console.WriteLine("Invalid option. Please try again.");
-                break;
+            { "Laptop", 999.99 },
+            { "Phone", 699.99 },
+            { "Headphones", 149.99 }
+        };
+
+        while (true)
+        {
+            Console.Clear();
+            Console.WriteLine("Available Products:");
+            foreach (var product in products)
+            {
+                Console.WriteLine($"{product.Key}: {product.Value:C}");
+            }
+
+            Console.WriteLine("\n1. Add product to cart");
+            Console.WriteLine("2. View my cart");
+            Console.WriteLine("3. Exit");
+            Console.Write("Select an option: ");
+
+            var option = Console.ReadLine();
+
+            switch (option)
+            {
+                case "1":
+                    await AddToCartFlow(supabaseService, products);
+                    break;
+                case "2":
+                    await ViewCartFlow(supabaseService);
+                    break;
+                case "3":
+                    return;
+                default:
+                    Console.WriteLine("Invalid option!");
+                    break;
+            }
         }
+    }
+
+    private static async Task AddToCartFlow(SupabaseService service, Dictionary<string, double> products)
+    {
+        Console.Write("Enter product name: ");
+        var productName = Console.ReadLine();
+
+        if (products.TryGetValue(productName, out var price))
+        {
+            await service.AddToCart(productName, price);
+            Console.WriteLine($"{productName} added to cart!");
+        }
+        else
+        {
+            Console.WriteLine("Product not found!");
+        }
+
+        Console.ReadKey();
+    }
+
+    private static async Task ViewCartFlow(SupabaseService service)
+    {
+        var cartItems = await service.GetUserCart();
+        Console.Clear();
+        Console.WriteLine("Your Cart:");
+
+        if (cartItems.Count == 0)
+        {
+            Console.WriteLine("Cart is empty");
+        }
+        else
+        {
+            foreach (var item in cartItems)
+            {
+                Console.WriteLine($"{item.Id}. {item.ProductName} - {item.ProductPrice:C}");
+            }
+
+            Console.WriteLine("\n1. Remove item");
+            Console.WriteLine("2. Back");
+            var choice = Console.ReadLine();
+
+            if (choice == "1")
+            {
+                Console.Write("Enter item ID to remove: ");
+                if (long.TryParse(Console.ReadLine(), out var itemId))
+                {
+                    await service.RemoveFromCart(itemId);
+                    Console.WriteLine("Item removed");
+                }
+            }
+        }
+
+        Console.ReadKey();
     }
 }

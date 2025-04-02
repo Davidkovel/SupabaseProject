@@ -1,5 +1,8 @@
 using Supabase.Gotrue;
 using Client = Supabase.Client;
+using SupabaseProject.Data.Source.Remote.Model;
+
+namespace SupabaseProject.Data.Source.Remote.Service;
 
 public class SupabaseService
 {
@@ -40,6 +43,7 @@ public class SupabaseService
         try
         {
             var session = await _client.Auth.SignIn(email, password);
+            SetAuthUser();
             return session;
         }
         catch (Exception ex)
@@ -73,5 +77,42 @@ public class SupabaseService
     public bool IsAuthenticated()
     {
         return IsLoggedIn;
+    }
+
+
+    public async Task<List<CartItem>> GetUserCart()
+    {
+        if (SupabaseUser?.Id == null)
+            return new List<CartItem>();
+
+        var result = await _client.From<CartItem>()
+            .Where(x => x.UserId == SupabaseUser.Id)
+            .Get();
+
+        return result.Models;
+    }
+
+    public async Task AddToCart(string productName, double price)
+    {
+        if (SupabaseUser.Id == null)
+            throw new Exception("User not authenticated");
+
+        var item = new CartItem
+        {
+            UserId = SupabaseUser.Id,
+            ProductName = productName,
+            ProductPrice = price
+        };
+
+        await _client.From<CartItem>().Insert(item);
+    }
+
+    public async Task RemoveFromCart(long itemId)
+    {
+        if (SupabaseUser?.Id == null) return;
+
+        await _client.From<CartItem>()
+            .Where(x => x.Id == itemId && x.UserId == SupabaseUser.Id)
+            .Delete();
     }
 }

@@ -1,5 +1,6 @@
-namespace SupabaseProject;
+namespace SupabaseProject.Pages;
 
+using SupabaseProject.Data.Source.Remote.Service;
 
 public class AuthScreen
 {
@@ -54,8 +55,7 @@ public class AuthScreen
             var success = await _supabaseService.Login(email, password);
             if (success != null)
             {
-                Console.WriteLine("Sign in successful! Press any key to continue...");
-                Console.ReadKey();
+                await HomeScreen.View(_supabaseService);
                 return;
             }
 

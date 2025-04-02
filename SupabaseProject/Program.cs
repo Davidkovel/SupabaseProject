@@ -1,4 +1,5 @@
 ﻿using SupabaseProject.Pages;
+using SupabaseProject.Data.Source.Remote.Service;
 
 namespace SupabaseProject;
 
@@ -15,11 +16,7 @@ public class MainClass
         var authScreen = new AuthScreen(supabaseService);
 
         await authScreen.Show();
-
-        if (supabaseService.IsLoggedIn)
-        {
-            HomeScreen.View(supabaseService);
-        }
+        supabaseService.SetAuthUser();
 
         Console.WriteLine("Goodbye!");
     }
